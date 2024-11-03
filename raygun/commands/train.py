@@ -116,7 +116,7 @@ def main():
     else:
         # Use ESM-2 650M by default
         esmmodel, esmalphabet = esm.pretrained.esm2_t33_650M_UR50D()
-
+    alphabet_dict = esmalphabet.to_dict() if hasattr(esmalphabet, "to_dict") else esmalphabet.get_vocab()
     # DEFAULT; use the pretrained model
     # if use_pretrained is set to False explicitly,
     # then only the model will be loaded from the checkpoint file
@@ -126,13 +126,14 @@ def main():
         checkpoint = torch.load(config.checkpoint)
         hyparams = checkpoint["model_hyperparams"]
         config.modelhyperparams = hyparams
+        
         model = Raygun(dim = hyparams["dim"],
                       convkernel = hyparams["convkernel"],
                       numencoders = hyparams["numencoders"],
                       numdecoders = hyparams["numdecoders"],
                       reduction = hyparams["reduction"],
                       nhead = hyparams["nhead"],
-                      esm_alphabet = esmalphabet.to_dict()).to(config.device)
+                      esm_alphabet = alphabet_dict).to(config.device)
         config.update_decodermodel_weights(checkpoint["esmtotokensdecoder"])
         model.load_pretrained(checkpoint)
     elif not hasattr(config, "use_pretrained") or config.use_pretrained: 
@@ -147,7 +148,7 @@ def main():
     else:  # don't use pretrained model, initialize everything from stratch
         emb_dim = config.emb_dim if hasattr(config, "emb_dim") else 1280
         model = Raygun(dim=emb_dim, 
-                       esm_alphabet = esmalphabet.to_dict()).to(config.device)
+                       esm_alphabet = alphabet_dict).to(config.device)
         
 
     # Set finetune to true when want to run the training in the finetune mode
