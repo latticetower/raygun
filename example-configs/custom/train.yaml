@@ -25,6 +25,7 @@ output_model_loc: "custom-trained"
 # Set this to true if the goal is finetuning. Finetuning freezes the encoder parameters only updating the Raygun decoder
 # For training from scratch, set `finetune: false`. Default: false
 finetune: false
+use_pretrained: False
 
 ## Total number of epochs to train/finetune, and the learning rate
 epoch: 50
