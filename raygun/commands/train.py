@@ -23,6 +23,7 @@ import json
 from Bio.Align import substitution_matrices
 import subprocess
 import logging 
+from transformers import AutoTokenizer, AutoModel
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -105,8 +106,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", help = "Configuration file")
     config = Config(parser.parse_args().config)
-    # Use ESM-2 650M
-    esmmodel, esmalphabet = esm.pretrained.esm2_t33_650M_UR50D()
+    
+    if hasattr(config, "emb_model"):
+        esmalphabet = AutoTokenizer.from_pretrained(config.emb_model)
+        esmmodel = AutoModel.from_pretrained(config.emb_model)
+    else:
+        # Use ESM-2 650M by default
+        esmmodel, esmalphabet = esm.pretrained.esm2_t33_650M_UR50D()
 
     # DEFAULT; use the pretrained model
     # if use_pretrained is set to False explicitly,
@@ -126,7 +132,7 @@ def main():
                       esm_alphabet = esmalphabet.to_dict()).to(config.device)
         config.update_decodermodel_weights(checkpoint["esmtotokensdecoder"])
         model.load_pretrained(checkpoint)
-    else: 
+    elif not hasattr(config, "use_pretrained") or config.use_pretrained: 
         logger.info(f"Using pre-trained checkpoint.")
         model, esmtotokdecoder, hyparams = torch.hub.load('rohitsinghlab/raygun', 
                                                 'pretrained_uniref50_95000_750M')
@@ -135,6 +141,10 @@ def main():
         esmtotokdecoder = esmtotokdecoder.to(config.device)
         config.decodermodel = esmtotokdecoder
         config.modelhyperparams = hyparams
+    else:  # don't use pretrained model, initialize everything from stratch
+        emb_dim = config.emb_dim if hasattr(config, "emb_dim") else 1280
+        model = Raygun(dim=emb_dim, 
+                       esm_alphabet = esmalphabet.to_dict()).to(config.device)
         
 
     # Set finetune to true when want to run the training in the finetune mode

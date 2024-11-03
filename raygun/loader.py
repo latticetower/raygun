@@ -48,7 +48,8 @@ class RaygunData(Dataset):
     
     def __getitem__(self, idx):
         data = [self.sequences[idx]]
-        _, _, tokens = self.bc(data)
+        # _, _, tokens = self.bc(data)
+        tokens = self.alphabet(data, return_tensors="pt")
         
         # if embedfolder is present, check if the embeddings are already computed
         if self.saveembedfolder is not None:
@@ -67,8 +68,9 @@ class RaygunData(Dataset):
         # if precompute is false, then only construct the embeddings
         with torch.no_grad():
             tokens = tokens.to(self.device)
-            embedding = self.model(tokens, repr_layers = [33],
-                                   return_contacts = False)["representations"][33].to("cpu")
+            #embedding = self.model(tokens, repr_layers = [33],
+            #                       return_contacts = False)["representations"][33].to("cpu")
+            embedding = self.model(**tokens).last_hidden_state
             if self.saveembedfolder is not None and self.save:
                 with h5py.File(ifile, "w") as hf:
                     hf.create_dataset(self.sequences[idx][0], 
