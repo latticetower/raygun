@@ -24,7 +24,10 @@ class RaygunData(Dataset):
         self.fastafile = fastafile
         self.model = model
         self.alphabet = alphabet
-        self.bc = self.alphabet.get_batch_converter()
+        if hasattr(self.alphabet, "get_batch_converter"):
+            self.bc = self.alphabet.get_batch_converter()
+        else:
+            self.bc = None
         if self.model is not None:
             self.model = self.model.to(device)
             self.model.eval()
@@ -48,8 +51,10 @@ class RaygunData(Dataset):
     
     def __getitem__(self, idx):
         data = [self.sequences[idx]]
-        # _, _, tokens = self.bc(data)
-        tokens = self.alphabet(data, return_tensors="pt")
+        if self.bc is not None:
+            _, _, tokens = self.bc(data)
+        else:
+            tokens = self.alphabet(data, return_tensors="pt")
         
         # if embedfolder is present, check if the embeddings are already computed
         if self.saveembedfolder is not None:
