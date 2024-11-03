@@ -68,7 +68,10 @@ class Config:
         return
     
     def get_alphabet(self, alphabet):
-        alphtokdict = alphabet.to_dict()
+        if hasattr(alphabet, "to_dict"):
+            alphtokdict = alphabet.to_dict()
+        else:
+            alphtokdict = alphabet.get_vocab()
         self.toktoalphdict = {k:i for i, k in alphtokdict.items()}
         return
     
